@@ -1,0 +1,174 @@
+<?php
+/**
+ * @file
+ * The module allows users to connect with third-party account.
+ */
+
+// ---------------------------------------------------------------------------------
+
+/**
+ * Implements hook_exit.
+ *
+ */
+function ilogin_exit() 
+{
+	unset( $GLOBALS['ilogin'] );
+}
+
+/**
+ * Implements hook_init.
+ *
+ */
+function ilogin_init() 
+{
+	/**
+	 * Module Path
+	 */
+	defined('ILOGIN_PATH') || define( 'ILOGIN_PATH', DRUPAL_ROOT . '/' . drupal_get_path('module', 'ilogin') );
+
+	/**
+	 * Module includes directory
+	 */
+	defined('ILOGIN_INCLUDE') || define( 'ILOGIN_INCLUDE', 'includes/' );
+
+	/**
+	 *
+	 * Include library file 
+	 *		(ilogin.hooks.inc, ilogin.func.inc, ilogin.admin.inc)
+	 */
+	foreach( array('hooks', 'func', 'admin', 'class') as $name ) {
+		module_load_include( 'inc', 'ilogin', ILOGIN_INCLUDE . 'ilogin.' . $name ) || 
+			die( '"' . ILOGIN_PATH . '/' .ILOGIN_INCLUDE. "ilogin.$name.inc" . '" file not exists.');
+	}
+
+	$ilogin = iLogin::_instance( array(
+		'configure' => parse_ini_file('ilogin.ini', true),
+		'platforms' => array_filter( variable_get( 'platform', array('weibo') ) ),
+	) );
+
+	$data = array( 'keys', 'secrets', 'callbacks', 'redirects' );
+	foreach( $data as $key ) {
+		${$key} = array();
+	}
+
+	foreach( $ilogin->platforms as $platform ) {
+
+		$keys[$platform] = variable_get( $platform . '_key', '' );
+		$secrets[$platform] = variable_get( $platform . '_secret', '' );
+		$callbacks[$platform] = sprintf( '%s/?q=ilogin/callback/%s', $GLOBALS['base_url'], $platform );
+		$redirects[$platform] = sprintf( '%s/?q=ilogin/redirect/%s', $GLOBALS['base_url'], $platform );
+
+	}
+
+	foreach( $data as $key ) {
+		$ilogin->set( $key, ${$key} );
+	}
+
+	// include module style
+	foreach( $ilogin->configure['styles'] as $css ) {
+		drupal_add_css( drupal_get_path('module', 'ilogin') . $css, array('group' => 'jee') );
+	}
+		
+	// include module javascript
+	foreach( $ilogin->configure['javascripts'] as $js ) {
+		drupal_add_js( drupal_get_path('module', 'ilogin') . $js, array('group' => 'jee') );
+	}
+
+	unset($data);
+	$GLOBALS['ilogin'] = $ilogin;
+}
+
+/**
+ * Implements hook_help.
+ *
+ * @return string
+ */
+function ilogin_help($path, $arg) {
+	switch ($path) {
+		case "admin/help#ilogin":
+			$return = '<p>' . t("Allows users to connect with third-party account.") . '</p>';
+			return $return;
+		break;
+	}
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * @return array
+ */
+function ilogin_permission() {
+	return array(
+		'administer iLogin' => array(
+			'title' => t('Administer ILogin'), 
+			'description' => t('Change the settings for how iLogin behaves on the site.'),
+		),
+	);
+}
+ 
+ /**
+ * Implements hook_menu.
+ *
+ * @return array
+ */
+function ilogin_menu() {
+	$items['admin/config/services/ilogin'] = array(
+		'title' => 'ILogin',
+		'description' => 'Configure required settings for third-party integration.',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('ilogin_configuration_form'),
+		'access arguments' => array('administer ilogin'),
+		'file' => ILOGIN_INCLUDE . '/ilogin.admin.inc',
+	);
+
+	$items['ilogin/redirect/%'] = array(
+		'type' => MENU_CALLBACK,
+		'description' => 'Connect the user with third-party Weibo account',
+		'page callback' => 'ilogin_signin_redirect',
+		'page arguments' => array(2),
+		'access callback' => TRUE,
+	);
+
+	$items['ilogin/callback/%'] = array(
+		'type' => MENU_CALLBACK,
+		'description' => 'Connect the user with their third-party account callback',
+		'page callback' => 'ilogin_auth_callback',
+		'page arguments' => array(2),
+		'access callback' => TRUE,
+	);
+
+	return $items;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function ilogin_form_alter(&$form, $form_state, $form_id) {
+
+	if( in_array($form_id, array('user_login', 'user_login_block', 'user_register_form')) ) {
+
+		$items = ilogin_signin_button();
+
+		$form['ilogin_signin'] = array(
+			'#markup' => theme('item_list', array('items' => $items)),
+		);
+	}
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function ilogin_user_delete( $account ) 
+{
+	foreach( $GLOBALS['ilogin']->platforms as $key ) {	
+		
+		$table = $GLOBALS['ilogin']->configure[$key]['table'];
+
+		if( db_table_exists( $table ) ) {
+
+			db_delete( $table )
+				->condition('uid', $account->uid)
+				->execute();
+		}
+	}
+}

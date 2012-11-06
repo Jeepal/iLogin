@@ -1,0 +1,135 @@
+<?php
+/**
+ * @file
+ * This file holds the install information for the ilogin Module.
+ */
+
+// ---------------------------------------------------------------------------------
+
+/**
+ * Implements hook_schema().
+ */
+function ilogin_schema() {
+
+  $schema['weibo_account'] = array(
+    'description' => "Stores information on specific Weibo user accounts.",
+    'fields' => array(
+      'weibo_uid' => array(
+        'description' => "The unique identifier of the {weibo_account}.",
+        'type' => 'numeric',
+        'unsigned' => TRUE,
+        'precision' => 20,
+        'scale' => 0,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => "The {users}.uid of the owner of this account",
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'screen_name' => array(
+        'description' => "The unique login name of the {weibo_account} user.",
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'access_token' => array(
+        'description' => 'The access token for oauth-based access.',
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'name' => array(
+        'description' => "The full name of the {weibo_account} user.",
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('weibo_uid'),
+  );
+
+  $schema['renren_account'] = array(
+    'description' => "Stores information on specific RenRen user accounts.",
+    'fields' => array(
+      'renren_uid' => array(
+        'description' => "The unique identifier of the {renren_account}.",
+        'type' => 'numeric',
+        'unsigned' => TRUE,
+        'precision' => 20,
+        'scale' => 0,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => "The {users}.uid of the owner of this account",
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'screen_name' => array(
+        'description' => "The unique login name of the {renren_account} user.",
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'access_token' => array(
+        'description' => 'The access token for oauth-based access.',
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'name' => array(
+        'description' => "The full name of the {renren_account} user.",
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('renren_uid'),
+  );
+
+  $schema['taobao_account'] = array(
+    'description' => "Stores information on specific taobao user accounts.",
+    'fields' => array(
+      'renren_uid' => array(
+        'description' => "The unique identifier of the {taobao_account}.",
+        'type' => 'numeric',
+        'unsigned' => TRUE,
+        'precision' => 20,
+        'scale' => 0,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uid' => array(
+        'description' => "The {users}.uid of the owner of this account",
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'screen_name' => array(
+        'description' => "The unique login name of the {taobao_account} user.",
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'access_token' => array(
+        'description' => 'The access token for oauth-based access.',
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'name' => array(
+        'description' => "The full name of the {taobao_account} user.",
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('taobao_uid'),
+  );
+
+  return $schema;
+}
